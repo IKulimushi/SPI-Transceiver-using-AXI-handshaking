@@ -219,47 +219,24 @@ begin
           end if;
 
         when (s_master_to_slave_transmitting) =>
-          if ((spi_mode = 0) or (spi_mode = 2)) then
-            if (I_CS_SWITCH(cs_active) = '0') and (I_RX_READY = '1') and (tx_valid = '1') then
-              if (bit_count_m_tx = G_DATA_BITS + 1) then
-                tx_last                 <= '1'; -- set tx_last to 1 when the last bit of data is transmitted
-                mosi                    <= G_IDLE_BIT; -- set mosi to idle bit when the last bit of data is transmitted
-                bit_count_m_tx          <= 0;
-                master_mosi_state_next  <= s_master_to_slave_transmitted;
-              else
-                -- mosi <= mosi_shr(mosi_shr'left);
-                if (master_shift_out_edge = '1') then                     -- shift out the leftmost bit of mosi_shr
-                  mosi           <= mosi_shr(mosi_shr'left);
-                  mosi_shr       <= mosi_shr(((mosi_shr'left) - 1) downto 0) & G_IDLE_BIT; -- shift MOSI left and fill with 0
-                  bit_count_m_tx <= (bit_count_m_tx + 1);
-                end if;
+          if (I_CS_SWITCH(cs_active) = '0') and (I_RX_READY = '1') and (tx_valid = '1') then
+            if (bit_count_m_tx = G_DATA_BITS + 1) then
+              tx_last                 <= '1'; -- set tx_last to 1 when the last bit of data is transmitted
+              mosi                    <= G_IDLE_BIT; -- set mosi to idle bit when the last bit of data is transmitted
+              bit_count_m_tx          <= 0;
+              master_mosi_state_next  <= s_master_to_slave_transmitted;
+            else
+              if (master_shift_out_edge = '1') then                     -- shift out the leftmost bit of mosi_shr
+                mosi           <= mosi_shr(mosi_shr'left);
+                mosi_shr       <= mosi_shr(((mosi_shr'left) - 1) downto 0) & G_IDLE_BIT; -- shift MOSI left and fill with 0
+                bit_count_m_tx <= (bit_count_m_tx + 1);
               end if;
-            -- go inactive state if cs is inactive, tx_valid is '0', or rx_ready is '0' and there are still bits to transmit
-            elsif ((I_CS_SWITCH(cs_active) = '1') or (I_RX_READY = '0')) and (bit_count_m_tx < G_DATA_BITS + 1) then
-              master_mosi_state_next <= s_master_to_slave_holding;
-              mosi_shr               <= mosi_shr;       -- hold the current mosi_shr value
-              bit_count_m_tx         <= bit_count_m_tx; -- hold the current bit_count_m_tx value
             end if;
-          else
-            if (I_CS_SWITCH(cs_active) = '0') and (I_RX_READY = '1') and (tx_valid = '1') then
-              if (bit_count_m_tx = G_DATA_BITS + 1) then
-                tx_last                 <= '1'; -- set tx_last to 1 when the last bit of data is transmitted
-                mosi                    <= G_IDLE_BIT; -- set mosi to idle bit when the last bit of data is transmitted
-                bit_count_m_tx          <= 0;
-                master_mosi_state_next  <= s_master_to_slave_transmitted;
-              else
-                mosi <= mosi_shr(mosi_shr'left);
-                if (master_shift_out_edge = '1') then                     -- shift out the leftmost bit of mosi_shr
-                  mosi_shr       <= mosi_shr(((mosi_shr'left) - 1) downto 0) & G_IDLE_BIT; -- shift MOSI left and fill with 0
-                  bit_count_m_tx <= (bit_count_m_tx + 1);
-                end if;
-              end if;
-            -- go inactive state if cs is inactive, tx_valid is '0', or rx_ready is '0' and there are still bits to transmit
-            elsif ((I_CS_SWITCH(cs_active) = '1') or (I_RX_READY = '0')) and (bit_count_m_tx < G_DATA_BITS + 1) then
-              master_mosi_state_next <= s_master_to_slave_holding;
-              mosi_shr               <= mosi_shr;       -- hold the current mosi_shr value
-              bit_count_m_tx         <= bit_count_m_tx; -- hold the current bit_count_m_tx value
-            end if;
+          -- go inactive state if cs is inactive, tx_valid is '0', or rx_ready is '0' and there are still bits to transmit
+          elsif ((I_CS_SWITCH(cs_active) = '1') or (I_RX_READY = '0')) and (bit_count_m_tx < G_DATA_BITS + 1) then
+            master_mosi_state_next <= s_master_to_slave_holding;
+            mosi_shr               <= mosi_shr;       -- hold the current mosi_shr value
+            bit_count_m_tx         <= bit_count_m_tx; -- hold the current bit_count_m_tx value
           end if;
 
         when (s_master_to_slave_holding) =>
